@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}{% if classificacao %}Editar{% else %}Nova{% endif %} Classificação{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="card-header">
+               <i class="bi bi-tag-fill"></i> {% if classificacao %}Editar Classificação{% else %}Adicionar Nova Classificação{% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição</label>
+                        <input type="text" name="descricao" id="descricao" class="form-control" value="{{ classificacao.descricao|default:'' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select name="tipo" id="tipo" class="form-select" required>
+                            <option value="DESPESA" {% if classificacao.tipo == 'DESPESA' %}selected{% endif %}>Despesa</option>
+                            <option value="RECEITA" {% if classificacao.tipo == 'RECEITA' %}selected{% endif %}>Receita</option>
+                        </select>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'classificacao_list' %}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Cancelar</a>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle-fill"></i> Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

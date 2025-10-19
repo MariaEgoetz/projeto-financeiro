@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Conta a Receber{% endblock %}
+
+{% block content %}
+<style>
+    .parcela-group {
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: #fafbfc;
+    }
+    .parcela-row + .parcela-row {
+        margin-top: 1rem;
+    }
+    .remove-btn-wrapper {
+        padding-top: 2rem; /* Alinha o botão com os inputs */
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="content-card">
+            <div class="card-header">
+                <i class="bi bi-cash-coin"></i> Registrar Nova Conta a Receber
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <h5 class="mb-3">Dados do Movimento</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cliente" class="form-label">Cliente</label>
+                            <select name="cliente" id="cliente" class="form-select" required>
+                                <option value="" disabled selected>Selecione...</option>
+                                {% for c in clientes %}<option value="{{ c.id }}">{{ c.razaosocial }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="dataemissao" class="form-label">Data de Emissão</label>
+                            <input type="date" name="dataemissao" id="dataemissao" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                         <div class="col-md-6 mb-3">
+                            <label for="numeronotafiscal" class="form-label">Nº Nota Fiscal (Opcional)</label>
+                            <input type="text" name="numeronotafiscal" id="numeronotafiscal" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                             <label for="classificacoes" class="form-label">Classificações da Receita</label>
+                            <select name="classificacoes" id="classificacoes" class="form-select" multiple required>
+                                {% for r in receitas %}
+                                <option value="{{ r.id }}">{{ r.descricao }}</option>
+                                {% empty %}
+                                <option disabled>Nenhuma receita cadastrada</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição Adicional</label>
+                        <textarea name="descricao" id="descricao" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Parcelas</h5>
+                        <button type="button" id="add-parcela-btn" class="btn btn-sm btn-info text-white"><i class="bi bi-plus-circle"></i> Adicionar Parcela</button>
+                    </div>
+
+                    <div id="parcelas-container" class="parcela-group">
+                        </div>
+
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'movimento_list' %}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Cancelar</a>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle-fill"></i> Lançar Conta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let parcelaIndex = 0;
+const container = document.getElementById('parcelas-container');
+
+function createParcelaRow(index) {
+    const div = document.createElement('div');
+    div.className = 'row g-2 align-items-center parcela-row';
+    div.innerHTML = `
+        <div class="col-md-4"><label class="form-label small">Identificação</label><input type="text" name="identificacao-${index}" class="form-control" placeholder="Ex: 1/3" required></div>
+        <div class="col-md-3"><label class="form-label small">Vencimento</label><input type="date" name="datavencimento-${index}" class="form-control" required></div>
+        <div class="col-md-3"><label class="form-label small">Valor</label><input type="number" step="0.01" name="valorparcela-${index}" class="form-control" required></div>
+        <div class="col-md-2 remove-btn-wrapper text-end"><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeParcela(this)"><i class="bi bi-trash-fill"></i></button></div>
+    `;
+    return div;
+}
+
+function addParcela() {
+    container.appendChild(createParcelaRow(parcelaIndex));
+    parcelaIndex++;
+}
+
+function removeParcela(button) {
+    if (container.querySelectorAll('.parcela-row').length > 1) {
+        button.closest('.parcela-row').remove();
+    } else {
+        alert("É necessário ter pelo menos uma parcela.");
+    }
+}
+
+document.getElementById('add-parcela-btn').addEventListener('click', addParcela);
+
+// Adiciona a primeira parcela ao carregar a página
+addParcela();
+</script>
+{% endblock %}

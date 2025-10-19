@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Movimentos Financeiros{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div class="card-header">
+        <i class="bi bi-list-ul"></i> Movimentos Financeiros
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Emissão</th>
+                        <th>Tipo</th>
+                        <th>Fornecedor/Cliente</th>
+                        <th>Nº Nota</th>
+                        <th class="text-end">Valor Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in movimentos %}
+                    <tr>
+                        <td>{{ m.dataemissao|date:"d/m/Y" }}</td>
+                        <td>
+                             <span class="badge bg-{% if m.tipo == 'PAGAR' %}danger{% else %}success{% endif %}">
+                                {{ m.tipo|capfirst }}
+                            </span>
+                        </td>
+                        <td>{{ m.fornecedor_cliente }}</td>
+                        <td>{{ m.numeronotafiscal|default:"N/A" }}</td>
+                        <td class="text-end fw-bold">R$ {{ m.valortotal|floatformat:2 }}</td>
+                        <td>{{ m.status|capfirst }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-4">Nenhum movimento financeiro encontrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

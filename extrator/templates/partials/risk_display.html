@@ -1,0 +1,18 @@
+<div class="risk-box risk-{{ risk_level }}">
+    <div class="risk-header {{ risk_level }}">
+        Parecer do Analista de Risco (IA): Nível {{ risk_level|upper }} (Nota: {{ risk_data.risk_score }}/10)
+    </div>
+    <div class="results-content">
+        <p><strong>Resumo da Análise:</strong> <em>{{ risk_data.summary }}</em></p>
+        {% if risk_data.red_flags %}
+            <h4>Alertas Encontrados:</h4>
+            {% for flag in risk_data.red_flags %}
+                <div class="red-flag">
+                    <strong>{{ flag.type }}:</strong> {{ flag.description }}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: var(--success-color);">Nenhuma inconsistência significativa foi detectada pelo agente de IA.</p>
+        {% endif %}
+    </div>
+</div>

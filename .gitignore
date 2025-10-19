@@ -1,0 +1,31 @@
+# Arquivo de ambiente - Contém segredos! NUNCA envie para o repositório.
+.env
+
+# Ambiente Virtual do Python
+venv/
+/venv/
+__pypcache__/
+
+# Banco de dados de desenvolvimento do Django
+db.sqlite3
+*.sqlite3
+
+# Arquivos de mídia enviados pelo usuário
+/media/
+
+# Arquivos de log
+*.log
+logs/
+
+# Arquivos de cache e compilados do Python
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de configuração de editores e IDEs
+.vscode/
+.idea/
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

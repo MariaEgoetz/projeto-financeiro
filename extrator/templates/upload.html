@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% block title %}Analisar Documento Fiscal{% endblock %}
+
+{% block content %}
+<style>
+    .header-section h1 {
+        font-weight: 700;
+        color: var(--text-color);
+    }
+    .header-section p {
+        color: var(--text-light-color);
+        font-size: 1.1rem;
+    }
+    #upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 10px;
+        background-color: #fafbfc;
+        padding: 3rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    #upload-area.dragover {
+        border-color: var(--primary-color);
+        background-color: #e9f2ff;
+    }
+    #file-preview {
+        display: none;
+        text-align: left;
+        padding: 1rem;
+        background-color: #e9f2ff;
+        border-radius: 8px;
+        border: 1px solid var(--primary-color);
+    }
+    #analysis-progress {
+        text-align: center;
+        padding: 4rem 0;
+    }
+    .loader {
+        width: 60px;
+        height: 60px;
+        border: 5px solid var(--secondary-color);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1.5rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Estilo dos Resultados */
+    #results-area .nav-tabs .nav-link {
+        color: var(--text-light-color);
+    }
+    #results-area .nav-tabs .nav-link.active {
+        color: var(--primary-color);
+        font-weight: 600;
+        border-color: var(--border-color) var(--border-color) var(--card-bg);
+    }
+    .risk-card {
+        border-radius: 8px;
+        color: white;
+        padding: 1.5rem;
+    }
+    .risk-card.low { background: linear-gradient(135deg, #00a389, #008772); }
+    .risk-card.medium { background: linear-gradient(135deg, #ffab00, #ff8b00); }
+    .risk-card.high { background: linear-gradient(135deg, #de350b, #bf2600); }
+
+    .flag-item {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        border-left: 4px solid white;
+    }
+</style>
+
+<div class="content-card">
+    <div class="card-header">
+        <i class="bi bi-file-earmark-arrow-up"></i> Análise Inteligente de Documentos
+    </div>
+    <div class="card-body">
+        <div id="upload-view">
+            <div class="header-section text-center mb-4">
+                <h1>Faça o upload do seu documento fiscal</h1>
+                <p>Nossa IA irá extrair os dados e analisar os riscos para você.</p>
+            </div>
+
+            <div id="error-box" class="alert alert-danger" style="display: none;"></div>
+
+            <form id="upload-form" action="{% url 'processar_pdf' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div id="upload-area">
+                    <div id="upload-instructions" class="text-center">
+                        <i class="bi bi-cloud-arrow-up-fill fs-1 text-primary"></i>
+                        <p class="mt-3 mb-1 fw-bold">Arraste e solte o arquivo PDF aqui</p>
+                        <span class="text-muted">ou clique para selecionar</span>
+                    </div>
+                </div>
+                <input type="file" name="pdf_file" id="pdf_file" class="d-none" accept=".pdf">
+            </form>
+
+            <div id="file-preview" class="mt-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-0 fw-bold"><i class="bi bi-file-earmark-pdf-fill"></i> <span id="file-name"></span></p>
+                    </div>
+                    <div>
+                        <button type="button" id="remove-file-btn" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Remover</button>
+                        <button id="submit-btn" type="submit" form="upload-form" class="btn btn-primary ms-2"><i class="bi bi-robot"></i> Iniciar Análise</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="progress-view" style="display: none;">
+            <div id="analysis-progress">
+                <div class="loader"></div>
+                <h4 id="progress-message">Analisando...</h4>
+                <p class="text-muted">Isso pode levar alguns segundos.</p>
+            </div>
+        </div>
+
+        <div id="results-view" style="display: none;">
+            <div class="header-section mb-4">
+                <h2><i class="bi bi-check2-circle text-success"></i> Análise Concluída</h2>
+                <p>Revise os dados extraídos e o parecer de risco antes de confirmar.</p>
+            </div>
+            <div id="results-content"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Seletores de elementos
+    const uploadView = document.getElementById('upload-view');
+    const progressView = document.getElementById('progress-view');
+    const resultsView = document.getElementById('results-view');
+    const form = document.getElementById('upload-form');
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('pdf_file');
+    const filePreview = document.getElementById('file-preview');
+    const fileNameDisplay = document.getElementById('file-name');
+    const removeBtn = document.getElementById('remove-file-btn');
+    const errorBox = document.getElementById('error-box');
+    const progressMessage = document.getElementById('progress-message');
+    const resultsContent = document.getElementById('results-content');
+
+    // Lógica de Upload (Drag & Drop)
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+    uploadArea.addEventListener('dragover', () => uploadArea.classList.add('dragover'));
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', e => {
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type === 'application/pdf') {
+            fileInput.files = files;
+            handleFileSelection();
+        } else {
+            showError("Por favor, envie apenas arquivos no formato PDF.");
+        }
+    });
+    uploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileSelection);
+    removeBtn.addEventListener('click', resetUploadState);
+
+    function handleFileSelection() {
+        if (fileInput.files.length > 0) {
+            fileNameDisplay.textContent = fileInput.files[0].name;
+            filePreview.style.display = 'block';
+            errorBox.style.display = 'none';
+        }
+    }
+
+    function resetUploadState() {
+        fileInput.value = '';
+        filePreview.style.display = 'none';
+        uploadView.style.display = 'block';
+        progressView.style.display = 'none';
+        resultsView.style.display = 'none';
+        form.reset();
+    }
+
+    function showError(message) {
+        uploadView.style.display = 'block';
+        progressView.style.display = 'none';
+        errorBox.textContent = `Erro: ${message}`;
+        errorBox.style.display = 'block';
+    }
+
+    // Submissão do Formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (fileInput.files.length === 0) return;
+
+        uploadView.style.display = 'none';
+        progressView.style.display = 'block';
+        progressMessage.textContent = 'Enviando arquivo...';
+
+        const formData = new FormData(form);
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.task_id) {
+                pollTaskStatus(data.task_id);
+            } else {
+                showError(data.error || 'Falha ao iniciar o processamento.');
+            }
+        })
+        .catch(err => showError(`Erro de comunicação com o servidor: ${err.message}`));
+    });
+
+    // Polling do Status da Tarefa
+    function pollTaskStatus(taskId) {
+        const pollInterval = setInterval(() => {
+            fetch(`/task_status/${taskId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.state === 'SUCCESS') {
+                    clearInterval(pollInterval);
+                    progressView.style.display = 'none';
+                    resultsView.style.display = 'block';
+                    renderResults(data.result);
+                } else if (data.state === 'FAILURE') {
+                    clearInterval(pollInterval);
+                    showError(data.error_message || 'Ocorreu um erro desconhecido durante o processamento.');
+                } else {
+                    progressMessage.textContent = data.status || 'Processando...';
+                }
+            })
+            .catch(err => {
+                clearInterval(pollInterval);
+                showError(`Erro ao verificar o status da tarefa: ${err.message}`);
+            });
+        }, 3000);
+    }
+
+    // Renderização dos Resultados
+    function renderResults(result) {
+        const { risk_analysis, validation_results, extracted_data } = result;
+
+        let risk_level = 'low';
+        if (risk_analysis.risk_score > 7) risk_level = 'high';
+        else if (risk_analysis.risk_score > 3) risk_level = 'medium';
+
+        const riskLevelText = {low: 'Baixo', medium: 'Médio', high: 'Alto'};
+
+        // HTML para os Alertas de Risco
+        const flagsHtml = (risk_analysis.red_flags || [])
+            .map(flag => `<div class="flag-item"><strong>${flag.type}:</strong> ${flag.description}</div>`)
+            .join('') || '<p>Nenhum alerta significativo encontrado.</p>';
+
+        // HTML para Validação no Banco
+        let validationHtml = '';
+        const renderValidationItem = (title, item) => {
+            const statusClass = item.status === 'EXISTE' ? 'text-success' : 'text-warning';
+            const statusIcon = item.status === 'EXISTE' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+            const idText = item.id ? `(ID: ${item.id})` : '(Será criado)';
+            const name = item.detail.razaosocial || item.detail.razao_social || item.detail.nome_completo || item.detail.descricao;
+            return `<li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div><strong>${title}:</strong> ${name}</div>
+                        <span class="badge ${statusClass} rounded-pill"><i class="${statusIcon}"></i> ${item.status} ${idText}</span>
+                    </li>`;
+        };
+
+        validationHtml += renderValidationItem('Fornecedor', validation_results.fornecedor);
+        validationHtml += renderValidationItem('Faturado', validation_results.faturado);
+        validation_results.classificacoes.forEach(c => {
+            validationHtml += renderValidationItem('Classificação', c);
+        });
+
+        // Monta o HTML final
+        resultsContent.innerHTML = `
+            <ul class="nav nav-tabs mb-4" id="resultsTab" role="tablist">
+                <li class="nav-item" role="presentation"><button class="nav-link active" id="risk-tab" data-bs-toggle="tab" data-bs-target="#risk-content" type="button" role="tab">Análise de Risco</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-content" type="button" role="tab">Dados Extraídos</button></li>
+                <li class="nav-item" role="presentation"><button class="nav-link" id="db-tab" data-bs-toggle="tab" data-bs-target="#db-content" type="button" role="tab">Validação no Banco</button></li>
+            </ul>
+
+            <div class="tab-content" id="resultsTabContent">
+                <div class="tab-pane fade show active" id="risk-content" role="tabpanel">
+                    <div class="risk-card ${risk_level}">
+                        <h3 class="mb-0">Risco: ${riskLevelText[risk_level]} (Nota: ${risk_analysis.risk_score}/10)</h3>
+                        <p class="mt-2"><strong>Parecer da IA:</strong> <em>${risk_analysis.summary}</em></p>
+                    </div>
+                    <div class="mt-4">
+                        <h4>Alertas Detalhados</h4>
+                        ${flagsHtml}
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="data-content" role="tabpanel">
+                    <h4>JSON Completo</h4>
+                    <pre class="bg-light p-3 rounded"><code>${JSON.stringify(extracted_data, null, 2)}</code></pre>
+                </div>
+                <div class="tab-pane fade" id="db-content" role="tabpanel">
+                    <h4>Validação de Entidades no Sistema</h4>
+                    <ul class="list-group">${validationHtml}</ul>
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" id="new-analysis-btn" class="btn btn-secondary"><i class="bi bi-arrow-clockwise"></i> Nova Análise</button>
+                <button type="button" id="confirm-btn" class="btn btn-success"><i class="bi bi-check-circle-fill"></i> Confirmar e Lançar</button>
+            </div>
+        `;
+    }
+
+    // Lógica para confirmar e lançar
+    resultsContent.addEventListener('click', function(event) {
+        const target = event.target.closest('button');
+        if (!target) return;
+
+        if (target.id === 'new-analysis-btn') {
+            resetUploadState();
+        } else if (target.id === 'confirm-btn') {
+            target.disabled = true;
+            target.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Lançando...';
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch("{% url 'confirmar_lancamento' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Sucesso! Lançamento criado: ' + data.message);
+                    resetUploadState();
+                } else {
+                    alert('Erro ao confirmar: ' + (data.error || 'Erro desconhecido.'));
+                }
+            }).catch(() => alert('Erro de comunicação ao confirmar.'))
+            .finally(() => {
+                target.disabled = false;
+                target.innerHTML = '<i class="bi bi-check-circle-fill"></i> Confirmar e Lançar';
+            });
+        }
+    });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Gerenciar Pessoas{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people-fill"></i> Pessoas (Fornecedores, Clientes, etc.)</span>
+        <a href="{% url 'pessoa_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Adicionar</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Razão Social / Nome</th>
+                        <th>Documento</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pessoas %}
+                    <tr>
+                        <td>{{ p.razaosocial }}</td>
+                        <td>{{ p.documento }}</td>
+                        <td>{{ p.tipo|capfirst }}</td>
+                        <td>
+                            <span class="badge rounded-pill bg-{% if p.status|lower == 'ativo' %}success{% else %}secondary{% endif %}">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'pessoa_update' p.id %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil-fill"></i></a>
+                            <a href="{% url 'pessoa_toggle_status' p.id %}" class="btn btn-sm btn-outline-secondary" title="{% if p.status|lower == 'ativo' %}Inativar{% else %}Reativar{% endif %}">
+                                <i class="bi bi-{% if p.status|lower == 'ativo' %}slash-circle{% else %}check-circle{% endif %}"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center py-4">Nenhum registro encontrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
