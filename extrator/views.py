@@ -1,3 +1,9 @@
+# INÍCIO DOS IMPORTS ADICIONADOS
+import json
+from agents.agent_rag.consultor_simples import AgentConsultorSimples
+from agents.agent_rag.consultor_embeddings import AgentConsultorEmbeddings
+# FIM DOS IMPORTS ADICIONADOS
+
 from django.db import transaction
 from django.http import JsonResponse
 from django.contrib import messages
@@ -225,3 +231,53 @@ def movimento_list_view(request):
     ]
     context = {'movimentos': movimentos}
     return render(request, 'movimento_list.html', context)
+
+
+# INÍCIO DO CÓDIGO ADICIONADO
+def rag_simples_view(request):
+    """Renderiza a página de consulta RAG Simples."""
+    return render(request, 'rag_simples.html')
+
+def processar_rag_simples_view(request):
+    """Processa a consulta RAG Simples."""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            pergunta = data.get('pergunta')
+
+            if not pergunta:
+                return JsonResponse({'error': 'Nenhuma pergunta fornecida.'}, status=400)
+
+            agent = AgentConsultorSimples()
+            resposta = agent.executar(pergunta)
+
+            return JsonResponse({'resposta': resposta})
+
+        except Exception as e:
+            return JsonResponse({'error': f'Erro no servidor: {e}'}, status=500)
+
+    return JsonResponse({'error': 'Método inválido.'}, status=405)
+
+def rag_embeddings_view(request):
+    """Renderiza a página de consulta RAG Embeddings."""
+    return render(request, 'rag_embeddings.html')
+
+def processar_rag_embeddings_view(request):
+    """Processa a consulta RAG Embeddings."""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            pergunta = data.get('pergunta')
+
+            if not pergunta:
+                return JsonResponse({'error': 'Nenhuma pergunta fornecida.'}, status=400)
+
+            agent = AgentConsultorEmbeddings()
+            resposta = agent.executar(pergunta)
+
+            return JsonResponse({'resposta': resposta})
+
+        except Exception as e:
+            return JsonResponse({'error': f'Erro no servidor: {e}'}, status=500)
+
+    return JsonResponse({'error': 'Método inválido.'}, status=405)

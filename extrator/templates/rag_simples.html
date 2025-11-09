@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% block title %}Consulta RAG Simples{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos para a janela de chat */
+    #chat-window {
+        height: 50vh; /* 50% da altura da tela */
+        overflow-y: auto; /* Adiciona barra de rolagem se o conteúdo transbordar */
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Estilos para cada balão de mensagem */
+    .message {
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+        max-width: 80%;
+        line-height: 1.5;
+        white-space: pre-wrap; /* Preserva quebras de linha e espaços */
+    }
+
+    /* Mensagem do Usuário (azul) */
+    .user-message {
+        background-color: var(--primary-color);
+        color: #fff;
+        align-self: flex-end; /* Alinha à direita */
+        margin-left: auto;
+    }
+
+    /* Mensagem da IA (cinza claro) */
+    .ai-message {
+        background-color: var(--secondary-color);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        align-self: flex-start; /* Alinha à esquerda */
+        margin-right: auto;
+    }
+
+    /* Formulário de input */
+    #chat-form {
+        display: flex;
+        gap: 0.5rem;
+    }
+    #chat-input {
+        flex-grow: 1; /* O input ocupa o máximo de espaço */
+    }
+
+    /* Spinner */
+    .spinner { 
+        border: 4px solid rgba(0, 82, 204, 0.1); 
+        border-left-color: var(--primary-color); 
+        border-radius: 50%; 
+        width: 30px; 
+        height: 30px; 
+        animation: spin 1s linear infinite; 
+        margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    #loading-spinner {
+        display: none; /* Começa escondido */
+        align-self: center;
+        margin: 1rem;
+    }
+
+</style>
+
+<div class="content-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+            <i class="bi bi-robot"></i> Consulta RAG Simples
+        </span>
+        <button id="clear-history-btn" class="btn btn-sm btn-danger">
+            <i class="bi bi-trash-fill"></i> Limpar Histórico
+        </button>
+        </div>
+    <div class="card-body">
+        
+        <div id="chat-window">
+            <div id="loading-spinner" class="spinner"></div>
+        </div>
+
+        <form id="chat-form">
+            {% csrf_token %}
+            <input type="text" id="chat-input" class="form-control" placeholder="Digite sua pergunta..." autocomplete="off">
+            <button type="submit" id="send-btn" class="btn btn-primary">
+                <i class="bi bi-send-fill"></i> Enviar
+            </button>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatWindow = document.getElementById('chat-window');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const sendBtn = document.getElementById('send-btn');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const processUrl = "{% url 'processar_rag_simples' %}";
+    
+    const storageKey = 'chatHistoryRAGSimples';
+
+    const clearBtn = document.getElementById('clear-history-btn');
+    
+    clearBtn.addEventListener('click', function() {
+        if (confirm('Tem certeza de que deseja apagar todo o histórico do chat?')) {
+            localStorage.removeItem(storageKey);
+            location.reload();
+        }
+    });
+
+    function getHistory() {
+        try {
+            const historyJson = localStorage.getItem(storageKey);
+            return historyJson ? JSON.parse(historyJson) : [];
+        } catch (e) {
+            console.error("Erro ao ler o histórico:", e);
+            return [];
+        }
+    }
+
+    function saveHistory(historyArray) {
+        localStorage.setItem(storageKey, JSON.stringify(historyArray));
+    }
+
+    function addMessageToHistory(sender, text) {
+        const history = getHistory();
+        history.push({ sender: sender, text: text });
+        saveHistory(history);
+    }
+    
+    function addMessageToChat(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        
+        if (sender === 'user') {
+            messageDiv.classList.add('user-message');
+        } else {
+            messageDiv.classList.add('ai-message');
+        }
+
+        messageDiv.textContent = text;
+        
+        chatWindow.insertBefore(messageDiv, loadingSpinner);
+        
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function loadChatHistory() {
+        const history = getHistory();
+        
+        if (history.length === 0) {
+            const olaText = 'Olá! Eu sou seu assistente de consulta ao banco de dados. O que você gostaria de saber?';
+            addMessageToChat(olaText, 'ai');
+            saveHistory([{ sender: 'ai', text: olaText }]);
+        } else {
+            history.forEach(msg => {
+                addMessageToChat(msg.text, msg.sender);
+            });
+        }
+    }
+
+    chatForm.addEventListener('submit', function(event) {
+        event.preventDefault(); 
+        
+        const pergunta = chatInput.value.trim();
+        if (pergunta === '') {
+            return; 
+        }
+
+        addMessageToChat(pergunta, 'user');
+        addMessageToHistory('user', pergunta);
+        
+        chatInput.value = ''; 
+
+        loadingSpinner.style.display = 'block';
+        sendBtn.disabled = true;
+
+        fetch(processUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 'pergunta': pergunta })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const aiResponse = data.resposta || `Erro: ${data.error || 'Não foi possível processar.'}`;
+            addMessageToChat(aiResponse, 'ai');
+            addMessageToHistory('ai', aiResponse);
+        })
+        .catch(err => {
+            const errorMsg = `Erro de conexão: ${err.message}`;
+            addMessageToChat(errorMsg, 'ai');
+            addMessageToHistory('ai', errorMsg);
+        })
+        .finally(() => {
+            loadingSpinner.style.display = 'none';
+            sendBtn.disabled = false;
+        });
+    });
+
+    loadChatHistory();
+});
+</script>
+{% endblock %}

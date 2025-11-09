@@ -18,5 +18,12 @@ urlpatterns = [
     path('classificacoes/<int:pk>/status/', views.classificacao_toggle_status_view, name='classificacao_toggle_status'),
 
     path('contas-a-receber/nova/', views.movimento_receber_create_view, name='movimento_receber_create'),
-    path('movimentos/', views.movimento_list_view, name='movimento_list')
+    path('movimentos/', views.movimento_list_view, name='movimento_list'),
+
+    # INÍCIO DO CÓDIGO ADICIONADO
+    path('consulta/simples/', views.rag_simples_view, name='rag_simples_view'),
+    path('processar-consulta/simples/', views.processar_rag_simples_view, name='processar_rag_simples'),
+    path('consulta/embeddings/', views.rag_embeddings_view, name='rag_embeddings_view'),
+    path('processar-consulta/embeddings/', views.processar_rag_embeddings_view, name='processar_rag_embeddings'),
+    # FIM DO CÓDIGO ADICIONADO
 ]

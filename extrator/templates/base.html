@@ -127,7 +127,25 @@
                     <li class="nav-item">
                         <a class="nav-link {% if 'movimento_list' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'movimento_list' %}">Movimentos</a>
                     </li>
-                </ul>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle 
+                           {% if 'rag_simples_view' in request.resolver_match.url_name or 'rag_embeddings_view' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#" id="navbarDropdownRag" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Consultar IA
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdownRag">
+                            <li>
+                                <a class="dropdown-item {% if 'rag_simples_view' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'rag_simples_view' %}">RAG Simples (Text-to-SQL)</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if 'rag_embeddings_view' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'rag_embeddings_view' %}">RAG Embeddings (com Exemplos)</a>
+                            </li>
+                        </ul>
+                    </li>
+                    </ul>
             </div>
         </div>
     </nav>
