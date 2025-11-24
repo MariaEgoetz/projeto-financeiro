@@ -5,13 +5,13 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="content-card">
-            <div class="card-header text-warning">
+            <div class="card-header text-warning fw-bold">
                 <i class="bi bi-key-fill"></i> Configuração Obrigatória
             </div>
             <div class="card-body">
                 <h5 class="card-title mb-3">Chave da API do Google Gemini</h5>
                 <p class="text-muted">
-                    Para utilizar a IA neste ambiente de demonstração, insira sua chave pessoal. 
+                    Para utilizar as funcionalidades de IA neste ambiente, insira sua chave pessoal. 
                     Ela será salva temporariamente na sua sessão.
                 </p>
 
@@ -20,7 +20,7 @@
                     <div class="mb-3">
                         <label for="api_key" class="form-label">Gemini API Key</label>
                         <input type="password" class="form-control" id="api_key" name="api_key" 
-                               placeholder="Ex: AIzaSy..." value="{{ existing_key|default:'' }}" required>
+                               placeholder="Cole sua chave aqui (Ex: AIzaSy...)" value="{{ existing_key|default:'' }}" required>
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Salvar Configuração</button>
@@ -29,7 +29,7 @@
                 
                 <div class="mt-3 text-center">
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" class="small text-decoration-none">
-                        Gerar chave no Google AI Studio <i class="bi bi-box-arrow-up-right"></i>
+                        Não tem uma chave? Gere aqui <i class="bi bi-box-arrow-up-right"></i>
                     </a>
                 </div>
             </div>
