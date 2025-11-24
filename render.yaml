@@ -1,0 +1,41 @@
+databases:
+  - name: financeiro_db
+    databaseName: financeiro
+    user: admin
+    plan: free
+
+services:
+  # 1. O Redis (Cache/Broker) - Essencial para o Celery
+  - type: redis
+    name: financeiro_redis
+    ipAllowList: []
+    plan: free
+
+  # 2. O Site Django (Web + Worker Integrado)
+  - type: web
+    name: projeto-financeiro-web-maria
+    runtime: docker
+    plan: free
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: financeiro_db
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: financeiro_redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: financeiro_redis
+          property: connectionString
+    # Comando de inicialização usando nosso script
+    dockerCommand: ./start.sh
