@@ -3,7 +3,10 @@ google-generativeai==0.8.5
 python-dotenv==1.1.1
 PyMuPDF==1.26.5
 psycopg2-binary==2.9.11
-openai==2.5.0
 celery==5.5.3
 redis==6.4.0
 numpy==1.26.4
+gunicorn==23.0.0
+whitenoise==6.7.0
+dj-database-url==2.2.0
+Faker==33.1.0

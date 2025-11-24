@@ -4,16 +4,51 @@
 {% block content %}
 <div class="content-card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-tags-fill"></i> Classificações (Receitas e Despesas)</span>
+        <span><i class="bi bi-tags-fill"></i> Gerenciar Classificações</span>
         <a href="{% url 'classificacao_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Adicionar</a>
     </div>
     <div class="card-body">
-       <div class="table-responsive">
+        
+        <form method="get" class="row g-3 mb-4 align-items-end">
+            <div class="col-md-6">
+                <label for="busca" class="form-label">Buscar por Descrição</label>
+                <div class="input-group">
+                    <input type="text" name="busca" id="busca" class="form-control" placeholder="Ex: Aluguel..." value="{{ busca_atual|default:'' }}">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <a href="?modo=todos" class="btn btn-secondary text-white">
+                    <i class="bi bi-list-ul"></i> Carregar Todas
+                </a>
+                {% if classificacoes %}
+                <a href="{% url 'classificacao_list' %}" class="btn btn-outline-secondary ms-2"><i class="bi bi-eraser"></i> Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+
+        <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Descrição</th>
-                        <th>Tipo</th>
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'descricao' %}-descricao{% else %}descricao{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Descrição
+                                {% if ordenar_atual == 'descricao' %}<i class="bi bi-sort-alpha-down text-primary"></i>
+                                {% elif ordenar_atual == '-descricao' %}<i class="bi bi-sort-alpha-up-alt text-primary"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'tipo' %}-tipo{% else %}tipo{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Tipo
+                                {% if ordenar_atual == 'tipo' %}<i class="bi bi-sort-alpha-down text-primary"></i>
+                                {% elif ordenar_atual == '-tipo' %}<i class="bi bi-sort-alpha-up-alt text-primary"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
                         <th>Status</th>
                         <th class="text-end">Ações</th>
                     </tr>
@@ -30,13 +65,22 @@
                         </td>
                         <td class="text-end">
                             <a href="{% url 'classificacao_update' c.id %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil-fill"></i></a>
-                            <a href="{% url 'classificacao_toggle_status' c.id %}" class="btn btn-sm btn-outline-secondary" title="{% if c.status|lower == 'ativo' %}Inativar{% else %}Reativar{% endif %}">
+                            <a href="{% url 'classificacao_toggle_status' c.id %}" class="btn btn-sm btn-outline-secondary" title="Alternar Status" onclick="return confirm('Deseja alterar o status?');">
                                 <i class="bi bi-{% if c.status|lower == 'ativo' %}slash-circle{% else %}check-circle{% endif %}"></i>
                             </a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4" class="text-center py-4">Nenhum registro encontrado.</td></tr>
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-tags display-6 d-block mb-3 text-secondary opacity-50"></i>
+                            {% if busca_atual %}
+                                Nenhuma classificação encontrada.
+                            {% else %}
+                                A lista inicia vazia.<br>Utilize a <strong>Busca</strong> ou clique em <strong>Carregar Todas</strong>.
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>

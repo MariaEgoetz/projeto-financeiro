@@ -8,12 +8,12 @@ load_dotenv()
 
 
 class AgentExtrator:
-    def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("A chave da API do Gemini não foi encontrada no arquivo .env.")
+    def __init__(self, api_key=None):
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+        if not self.api_key:
+            raise ValueError("A chave da API do Gemini é obrigatória.")
 
-        genai.configure(api_key=api_key)
+        genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel('gemini-2.5-flash')
 
     def executar(self, pdf_stream):

@@ -78,8 +78,37 @@ class MovimentoRepository(BaseRepository):
 
         return movimento_id
 
-    def list_all_movements(self):
-        query = """
+    def list_all_movements(self, order_by='-dataemissao'):
+        order_sql = self._get_order_clause(order_by)
+        query = f"""
+            {self._build_base_query()}
+            ORDER BY {order_sql}
+        """
+        return self._execute_query(query, fetch="all")
+
+    def _get_order_clause(self, order_param):
+        """Traduz ordenação da URL para SQL seguro, considerando os aliases das tabelas."""
+        mapeamento = {
+            'dataemissao': 'mc.dataemissao ASC',
+            '-dataemissao': 'mc.dataemissao DESC',
+            'numeronotafiscal': 'mc.numeronotafiscal ASC',
+            '-numeronotafiscal': 'mc.numeronotafiscal DESC',
+            'tipo': 'mc.tipo ASC',
+            '-tipo': 'mc.tipo DESC',
+            'fornecedor_cliente': 'p_fc.razaosocial ASC',
+            '-fornecedor_cliente': 'p_fc.razaosocial DESC',
+            'faturado': 'p_f.razaosocial ASC',
+            '-faturado': 'p_f.razaosocial DESC',
+            'valortotal': 'mc.valortotal ASC',
+            '-valortotal': 'mc.valortotal DESC',
+            'status': 'mc.status ASC',
+            '-status': 'mc.status DESC'
+        }
+        # Padrão: Data de emissão decrescente (mais recente primeiro)
+        return mapeamento.get(order_param, 'mc.dataemissao DESC')
+    
+    def _build_base_query(self):
+        return """
             SELECT
                 mc.id,
                 mc.dataemissao,
@@ -92,6 +121,18 @@ class MovimentoRepository(BaseRepository):
             FROM "MovimentoContas" mc
             JOIN "Pessoas" p_fc ON mc."Pessoas_idFornecedorCliente" = p_fc.id
             JOIN "Pessoas" p_f ON mc."Pessoas_idFaturado" = p_f.id
-            ORDER BY mc.dataemissao DESC, mc.id DESC
         """
-        return self._execute_query(query, fetch="all")
+        
+    def search_movements(self, termo, order_by='-dataemissao'):
+        """Busca por Nº Nota, Nome do Fornecedor/Cliente ou Nome do Faturado."""
+        order_sql = self._get_order_clause(order_by)
+        query = f"""
+            {self._build_base_query()}
+            WHERE 
+                mc.numeronotafiscal ILIKE %s OR
+                p_fc.razaosocial ILIKE %s OR
+                p_f.razaosocial ILIKE %s
+            ORDER BY {order_sql}
+        """
+        param = f"%{termo}%"
+        return self._execute_query(query, [param, param, param], fetch="all")

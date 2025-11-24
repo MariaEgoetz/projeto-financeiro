@@ -6,15 +6,26 @@ from .repositories.pessoa_repository import PessoaRepository
 from .repositories.classificacao_repository import ClassificacaoRepository
 
 
+import base64
+from celery import shared_task, states
+from celery.exceptions import Ignore
+from agents.agent_extrator.processador_pdf import AgentExtrator
+from agents.agent_fraud_analysis.analyzer import AgentFraudCompliance
+from .repositories.pessoa_repository import PessoaRepository
+from .repositories.classificacao_repository import ClassificacaoRepository
+
 @shared_task(bind=True)
-def processar_pdf_task(self, pdf_content_bytes):
+def processar_pdf_task(self, pdf_content_b64, api_key):
     try:
+        # Decodifica Base64 para bytes
+        pdf_content_bytes = base64.b64decode(pdf_content_b64)
+
         self.update_state(state='PROGRESS', meta={'status': 'Agente 1 (Gemini) está extraindo os dados...'})
-        agente_extrator = AgentExtrator()
+        agente_extrator = AgentExtrator(api_key=api_key)
         dados_extraidos = agente_extrator.executar(pdf_content_bytes)
 
-        self.update_state(state='PROGRESS', meta={'status': 'Agente 2 (OpenAI) está auditando os riscos...'})
-        agente_analista = AgentFraudCompliance(dados_extraidos)
+        self.update_state(state='PROGRESS', meta={'status': 'Agente 2 (Gemini) está auditando os riscos...'})
+        agente_analista = AgentFraudCompliance(dados_extraidos, api_key=api_key)
         analise_risco = agente_analista.analisar()
 
         self.update_state(state='PROGRESS', meta={'status': 'Validando com o banco de dados...'})

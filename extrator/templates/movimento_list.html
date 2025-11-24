@@ -1,21 +1,95 @@
 {% extends 'base.html' %}
-{% block title %}Movimentos Financeiros{% endblock %}
+{% block title %}Listagem de Movimentos Financeiros{% endblock %}
 
 {% block content %}
-<div class="content-card">
-    <div class="card-header">
-        <i class="bi bi-list-ul"></i> Movimentos Financeiros
-    </div>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-ul"></i> Movimentos Financeiros (Notas Fiscais)</span>
+        </div>
     <div class="card-body">
+        
+        <form method="get" class="row g-3 mb-4 align-items-end">
+            <div class="col-md-6">
+                <label for="busca" class="form-label">Buscar por Nº Nota, Fornecedor ou Faturado</label>
+                <div class="input-group">
+                    <input type="text" name="busca" id="busca" class="form-control" placeholder="Digite para buscar..." value="{{ busca_atual|default:'' }}">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <a href="?modo=todos" class="btn btn-secondary">
+                    <i class="bi bi-list-ul"></i> Carregar Todos
+                </a>
+                {% if movimentos %}
+                <a href="{% url 'movimento_list' %}" class="btn btn-outline-secondary ms-2"><i class="bi bi-eraser"></i> Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Emissão</th>
-                        <th>Tipo</th>
-                        <th>Fornecedor/Cliente</th>
-                        <th>Nº Nota</th>
-                        <th class="text-end">Valor Total</th>
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'dataemissao' %}-dataemissao{% else %}dataemissao{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Emissão
+                                {% if ordenar_atual == 'dataemissao' %}<i class="bi bi-sort-numeric-down"></i>
+                                {% elif ordenar_atual == '-dataemissao' %}<i class="bi bi-sort-numeric-up-alt"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+                        
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'numeronotafiscal' %}-numeronotafiscal{% else %}numeronotafiscal{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Nº da Nota
+                                {% if ordenar_atual == 'numeronotafiscal' %}<i class="bi bi-sort-alpha-down"></i>
+                                {% elif ordenar_atual == '-numeronotafiscal' %}<i class="bi bi-sort-alpha-up-alt"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'tipo' %}-tipo{% else %}tipo{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Tipo
+                                {% if ordenar_atual == 'tipo' %}<i class="bi bi-sort-alpha-down"></i>
+                                {% elif ordenar_atual == '-tipo' %}<i class="bi bi-sort-alpha-up-alt"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'fornecedor_cliente' %}-fornecedor_cliente{% else %}fornecedor_cliente{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Fornecedor/Cliente
+                                {% if ordenar_atual == 'fornecedor_cliente' %}<i class="bi bi-sort-alpha-down"></i>
+                                {% elif ordenar_atual == '-fornecedor_cliente' %}<i class="bi bi-sort-alpha-up-alt"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'faturado' %}-faturado{% else %}faturado{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Faturado
+                                {% if ordenar_atual == 'faturado' %}<i class="bi bi-sort-alpha-down"></i>
+                                {% elif ordenar_atual == '-faturado' %}<i class="bi bi-sort-alpha-up-alt"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+
+                        <th class="text-end">
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'valortotal' %}-valortotal{% else %}valortotal{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-end align-items-center gap-2">
+                                Valor Total
+                                {% if ordenar_atual == 'valortotal' %}<i class="bi bi-sort-numeric-down"></i>
+                                {% elif ordenar_atual == '-valortotal' %}<i class="bi bi-sort-numeric-up-alt"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+                        
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -23,18 +97,28 @@
                     {% for m in movimentos %}
                     <tr>
                         <td>{{ m.dataemissao|date:"d/m/Y" }}</td>
+                        <td>{{ m.numeronotafiscal }}</td>
                         <td>
-                             <span class="badge bg-{% if m.tipo == 'PAGAR' %}danger{% else %}success{% endif %}">
+                            <span class="badge bg-{% if m.tipo == 'PAGAR' %}danger{% else %}success{% endif %}">
                                 {{ m.tipo|capfirst }}
                             </span>
                         </td>
                         <td>{{ m.fornecedor_cliente }}</td>
-                        <td>{{ m.numeronotafiscal|default:"N/A" }}</td>
-                        <td class="text-end fw-bold">R$ {{ m.valortotal|floatformat:2 }}</td>
+                        <td>{{ m.faturado }}</td>
+                        <td class="text-end">R$ {{ m.valortotal|floatformat:2 }}</td>
                         <td>{{ m.status|capfirst }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center py-4">Nenhum movimento financeiro encontrado.</td></tr>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-receipt display-6 d-block mb-2"></i>
+                            {% if busca_atual or modo_atual %}
+                                Nenhum movimento encontrado.
+                            {% else %}
+                                A lista inicia vazia. Utilize a <strong>Busca</strong> ou clique em <strong>Carregar Todos</strong>.
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>

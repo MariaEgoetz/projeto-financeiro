@@ -12,26 +12,34 @@ from .corpus_exemplos import CORPUS_EXEMPLOS
 load_dotenv()
 
 class AgentConsultorEmbeddings:
-    def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("A chave da API do Gemini não foi encontrada no arquivo .env.")
+    def __init__(self, api_key=None):
+        # Aceita a chave por parâmetro ou pega do .env
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+        
+        if not self.api_key:
+            raise ValueError("A chave da API do Gemini é obrigatória para consulta.")
 
-        genai.configure(api_key=api_key)
+        genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel('gemini-2.5-flash')
         self.schema = self._get_db_schema()
 
-
+        # --- LÓGICA RAG ---
         self.corpus_perguntas = [item['pergunta'] for item in CORPUS_EXEMPLOS]
         self.corpus_queries = [item['query'] for item in CORPUS_EXEMPLOS]
         
         print("Iniciando Agente Consultor EMBEDDINGS...")
-        print("Gerando embeddings para o corpus de exemplos. Isso pode levar um momento...")
-        
-        self.corpus_embeddings = self._gerar_embeddings_corpus(self.corpus_perguntas)
-        
-        num_exemplos = self.corpus_embeddings.shape[0] if len(self.corpus_embeddings.shape) > 1 else (len(self.corpus_embeddings) if self.corpus_embeddings.size > 0 else 0)
-        print(f"Corpus de Embeddings carregado. {num_exemplos} exemplos processados.")
+        # Nota: A geração de embeddings pode falhar se a chave for inválida na inicialização
+        # Mas permitimos instanciar para validação posterior se necessário
+        try:
+            print("Gerando embeddings para o corpus de exemplos...")
+            self.corpus_embeddings = self._gerar_embeddings_corpus(self.corpus_perguntas)
+            
+            num_exemplos = self.corpus_embeddings.shape[0] if len(self.corpus_embeddings.shape) > 1 else (len(self.corpus_embeddings) if self.corpus_embeddings.size > 0 else 0)
+            print(f"Corpus de Embeddings carregado. {num_exemplos} exemplos processados.")
+        except Exception as e:
+            print(f"Erro ao inicializar embeddings (verifique a API Key): {e}")
+            self.corpus_embeddings = np.array([])
+
 
     def _get_db_schema(self):
         schema_info = """

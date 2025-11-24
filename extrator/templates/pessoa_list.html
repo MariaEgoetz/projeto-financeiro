@@ -8,13 +8,56 @@
         <a href="{% url 'pessoa_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Adicionar</a>
     </div>
     <div class="card-body">
+        
+        <form method="get" class="row g-3 mb-4 align-items-end">
+            <div class="col-md-6">
+                <label for="busca" class="form-label">Buscar por Nome ou Documento</label>
+                <div class="input-group">
+                    <input type="text" name="busca" id="busca" class="form-control" placeholder="Digite para buscar..." value="{{ busca_atual|default:'' }}">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <a href="?modo=todos" class="btn btn-secondary text-white">
+                    <i class="bi bi-list-ul"></i> Carregar Todos
+                </a>
+                {% if pessoas %}
+                <a href="{% url 'pessoa_list' %}" class="btn btn-outline-secondary ms-2"><i class="bi bi-eraser"></i> Limpar</a>
+                {% endif %}
+            </div>
+        </form>
+
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Razão Social / Nome</th>
-                        <th>Documento</th>
-                        <th>Tipo</th>
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'razaosocial' %}-razaosocial{% else %}razaosocial{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Razão Social
+                                {% if ordenar_atual == 'razaosocial' %}<i class="bi bi-sort-alpha-down text-primary"></i>
+                                {% elif ordenar_atual == '-razaosocial' %}<i class="bi bi-sort-alpha-up-alt text-primary"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'documento' %}-documento{% else %}documento{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Documento
+                                {% if ordenar_atual == 'documento' %}<i class="bi bi-sort-numeric-down text-primary"></i>
+                                {% elif ordenar_atual == '-documento' %}<i class="bi bi-sort-numeric-up-alt text-primary"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="?busca={{ busca_atual }}&modo={{ modo_atual }}&ordenar={% if ordenar_atual == 'tipo' %}-tipo{% else %}tipo{% endif %}" 
+                               class="text-decoration-none text-reset d-flex justify-content-between align-items-center">
+                                Tipo
+                                {% if ordenar_atual == 'tipo' %}<i class="bi bi-sort-alpha-down text-primary"></i>
+                                {% elif ordenar_atual == '-tipo' %}<i class="bi bi-sort-alpha-up-alt text-primary"></i>
+                                {% else %}<i class="bi bi-filter text-muted" style="font-size: 0.8em;"></i>{% endif %}
+                            </a>
+                        </th>
                         <th>Status</th>
                         <th class="text-end">Ações</th>
                     </tr>
@@ -32,13 +75,23 @@
                         </td>
                         <td class="text-end">
                             <a href="{% url 'pessoa_update' p.id %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil-fill"></i></a>
-                            <a href="{% url 'pessoa_toggle_status' p.id %}" class="btn btn-sm btn-outline-secondary" title="{% if p.status|lower == 'ativo' %}Inativar{% else %}Reativar{% endif %}">
-                                <i class="bi bi-{% if p.status|lower == 'ativo' %}slash-circle{% else %}check-circle{% endif %}"></i>
+                            <a href="{% url 'pessoa_toggle_status' p.id %}" class="btn btn-sm btn-outline-danger" title="Excluir (Inativar)" onclick="return confirm('Tem certeza que deseja inativar este registro?');">
+                                <i class="bi bi-trash"></i>
                             </a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="5" class="text-center py-4">Nenhum registro encontrado.</td></tr>
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-search display-6 d-block mb-3 text-secondary opacity-50"></i>
+                            {% if busca_atual %}
+                                Nenhum registro encontrado para "{{ busca_atual }}".
+                            {% else %}
+                                A tabela inicia vazia para otimização.<br>
+                                Utilize a <strong>Busca</strong> ou clique em <strong>Carregar Todos</strong>.
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>

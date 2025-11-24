@@ -15,10 +15,12 @@ class ClassificacaoRepository(BaseRepository):
         """
         return self._execute_query(query, [tipo, descricao])
 
-    def list_all(self):
-        query = """
+    def list_all(self, order_by='descricao'):
+        order_sql = self._get_order_clause(order_by)
+        query = f"""
             SELECT id, descricao, tipo, status 
-            FROM "Classificacao" ORDER BY descricao
+            FROM "Classificacao" 
+            ORDER BY {order_sql}
         """
         return self._execute_query(query, fetch="all")
 
@@ -49,3 +51,26 @@ class ClassificacaoRepository(BaseRepository):
             WHERE tipo = 'RECEITA' AND status = 'ATIVO' ORDER BY descricao
         """
         return self._execute_query(query, fetch="all")
+
+    def _get_order_clause(self, order_param):
+        """Traduz ordenação da URL para SQL seguro."""
+        mapeamento = {
+            'descricao': 'descricao ASC',
+            '-descricao': 'descricao DESC',
+            'tipo': 'tipo ASC',
+            '-tipo': 'tipo DESC',
+            'status': 'status ASC',
+            '-status': 'status DESC'
+        }
+        return mapeamento.get(order_param, 'descricao ASC')
+    
+    def search(self, termo, order_by='descricao'):
+        order_sql = self._get_order_clause(order_by)
+        query = f"""
+            SELECT id, descricao, tipo, status 
+            FROM "Classificacao" 
+            WHERE descricao ILIKE %s
+            ORDER BY {order_sql}
+        """
+        param = f"%{termo}%"
+        return self._execute_query(query, [param], fetch="all")
