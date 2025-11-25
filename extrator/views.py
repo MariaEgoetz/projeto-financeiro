@@ -352,30 +352,30 @@ def movimento_list_view(request):
         'ordenar_atual': ordenar_por
     })
     
-#def criar_admin_view(request):
-#    """
-#    View TEMPORÁRIA para criar um superusuário.
-#    """
-#    try:
-#        # Verifica se já existe para não dar erro
-#        if not User.objects.filter(username='admin').exists():
-#            User.objects.create_superuser('admin', 'admin@exemplo.com', 'admin123')
-#            return JsonResponse({'status': 'Sucesso! Usuário "admin" criado com senha "admin123".'})
-#        else:
-#            return JsonResponse({'status': 'O usuário "admin" já existe.'})
-#    except Exception as e:
-#        return JsonResponse({'error': f'Erro ao criar admin: {str(e)}'}, status=500)
+def criar_admin_view(request):
+    """
+    View TEMPORÁRIA para criar um superusuário.
+    """
+    try:
+        # Verifica se já existe para não dar erro
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@exemplo.com', 'admin123')
+            return JsonResponse({'status': 'Sucesso! Usuário "admin" criado com senha "admin123".'})
+        else:
+            return JsonResponse({'status': 'O usuário "admin" já existe.'})
+    except Exception as e:
+        return JsonResponse({'error': f'Erro ao criar admin: {str(e)}'}, status=500)
 
 #Função utilizada para popular o banco de dados para testes.
-#def popular_banco_view(request):
-#    """
-#    View secreta para rodar o script de popular o banco via navegador.
-#   Útil para servidores onde o Shell é pago/bloqueado.
-#   """
-#
-#    try:
-#        # Chama o comando que criamos (popular_banco.py)
-#        call_command('popular_banco')
-#        return JsonResponse({'status': 'Sucesso! 200 registros criados no banco.'})
-#    except Exception as e:
-#        return JsonResponse({'error': f'Erro ao popular banco: {str(e)}'}, status=500)
+def popular_banco_view(request):
+    """
+    View secreta para rodar o script de popular o banco via navegador.
+    Útil para servidores onde o Shell é pago/bloqueado.
+    """
+
+    try:
+        # Chama o comando que criamos (popular_banco.py)
+        call_command('popular_banco')
+        return JsonResponse({'status': 'Sucesso! 200 registros criados no banco.'})
+    except Exception as e:
+        return JsonResponse({'error': f'Erro ao popular banco: {str(e)}'}, status=500)
